@@ -268,7 +268,7 @@ const checkoutStartedMiddleware = async (pixel_id, event) => {
   const product = line_items[0].variant.product;
   const spaf = checkStorageForSPaf();
   if (
-    event.context.document.referrer.contains("products") &&
+    event.context.document.referrer.includes("products") &&
     line_items.length === 1 &&
     spaf &&
     !Object.keys(spaf.products).includes(product.id)
@@ -313,7 +313,7 @@ const trackPurchaseMiddleware = async (pixel_id, event) => {
         line_item.product_link = spaf_products[product.id].product_link;
       }
       line_item.product_id = product.id;
-      line_item.sub_total = lineItem.price.amount * lineItem.quantity;
+      line_item.sub_total = lineItem.variant.price.amount * lineItem.quantity;
       line_item.variant_id = lineItem.variant.id;
       line_item.quantity = lineItem.quantity;
       line_item.affiliate_link = spaf.origin_link;
