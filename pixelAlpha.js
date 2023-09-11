@@ -1,3 +1,26 @@
+const analytics = window.Shopify.analytics;
+const pixel_id = "R2hiZXREek9oTmVWUzBNdzFycDg=";
+analytics.subscribe("product_viewed", async (event) => {
+  console.log(event);
+  await spaf(pixel_id, spaf_callback_names.product_viewed, event);
+});
+
+analytics.subscribe("product_added_to_cart", async (event) => {
+  console.log(event);
+});
+
+analytics.subscribe("checkout_started", async (event) => {
+  await spaf(pixel_id, spaf_callback_names.start_checkout, event);
+});
+
+analytics.subscribe("checkout_completed", async (event) => {
+  await spaf(pixel_id, spaf_callback_names.track_purchase, event);
+});
+
+analytics.subscribe("page_viewed", async (event) => {
+  await spaf(pixel_id, spaf_callback_names.track_visit, event);
+});
+
 const api_link =
   "https://us-central1-socialpi-app.cloudfunctions.net/brand_app/api/affiliate";
 
