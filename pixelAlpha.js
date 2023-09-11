@@ -6,6 +6,7 @@ const makePostHeader = (pixel_id) => {
     Accept: "*/*",
     Authorization: "Bearer " + pixel_id,
     "Content-type": "application/json",
+    mode: "cors",
   };
 };
 
@@ -167,6 +168,7 @@ async function addProductToSpaf(link, product) {
         origin_link: old_spaf.origin_link,
         origin_affiliate: old_spaf.origin_affiliate,
         expiry: old_spaf.expiry,
+        product: product.spaf_id,
       }
     : await getCommissionDetails(pixel_id, link, product);
 
@@ -267,6 +269,7 @@ const checkoutStartedMiddleware = async (pixel_id, event) => {
   const line_items = event.data.checkout.lineItems;
   const product = line_items[0].variant.product;
   const spaf = checkStorageForSPaf();
+
   if (
     event.context.document.referrer.includes("products") &&
     line_items.length === 1 &&
@@ -289,7 +292,7 @@ const checkoutStartedMiddleware = async (pixel_id, event) => {
       }
     );
   }
-  console.log(event);
+  //console.log(event);
 };
 
 //Middleware for tracking purchase
@@ -327,8 +330,8 @@ const trackPurchaseMiddleware = async (pixel_id, event) => {
       client_id: event.clientId,
       order: {
         id: checkout.order.id.split("OrderIdentity/")[1],
-        sub_total: checkout.subTotalPrice.amount,
-        currency: checkout.subTotalPrice.currencyCode,
+        sub_total: checkout.subtotalPrice.amount,
+        currency: checkout.subtotalPrice.currencyCode,
         total_items: lineItems.length,
         token: checkout.token,
         snap: { ...event },
@@ -337,21 +340,5 @@ const trackPurchaseMiddleware = async (pixel_id, event) => {
     };
     await sendPurchaseCallback(pixel_id, payload);
   }
-  console.log(event);
+  //console.log(event);
 };
-
-/* const productAddedToCartMiddleware = async (pixel_id, event) => {
-  const link = event.context.document.location.href;
-  const spaf = checkStorageForSPaf();
-  let product = event.data.cartLine.merchandise.product;
-  if (Object.keys(spaf.products).includes(product.id)) return 0;
-
-  if (link.includes("products"))
-    {product.link =
-      event.context.document.location.origin +
-      event.context.document.location.pathname;
-      await addProductToSpaf(spaf.origin_link, product);
-    }
-  else return 0;
-}; */
-//#endregion
