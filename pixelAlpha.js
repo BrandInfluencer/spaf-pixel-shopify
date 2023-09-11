@@ -241,7 +241,7 @@ const spaf_callback_names = {
 
 //spaf interface switch
 async function spaf(pixel_id, callback_name, data) {
-  switch (callback_name) {
+  /*   switch (callback_name) {
     case spaf_callback_names.track_visit:
       await trackVisitMiddleware(pixel_id, data);
       return 0;
@@ -254,12 +254,9 @@ async function spaf(pixel_id, callback_name, data) {
     case spaf_callback_names.start_checkout:
       await checkoutStartedMiddleware(pixel_id, data);
       return 0;
-    /* case spaf_callback_names.add_cart:
-      await productAddedToCartMiddleware(pixel_id, data);
-      return 0; */
     default:
       break;
-  }
+  } */
 }
 
 //#region
