@@ -48,7 +48,7 @@ const productViewedMiddleware = async (pixel_id, event) => {
     };
     sendVisitCallback(pixel_id, payload).then(() => {
       if (!spaf) {
-        initSpaf(link).then(async () => {
+        initSpaf(pixel_id, link).then(async () => {
           await addProductToSpaf(link, product);
         });
       }
@@ -210,7 +210,7 @@ async function addProductToSpaf(link, product) {
   }
 }
 
-async function initSpaf(link) {
+async function initSpaf(pixel_id, link) {
   console.log("Initializing spaf");
   const old_spaf = checkStorageForSPaf();
   const commission_details = await getCommissionDetails(pixel_id, link);
@@ -241,7 +241,7 @@ const spaf_callback_names = {
 
 //spaf interface switch
 async function spaf(pixel_id, callback_name, data) {
-  /*   switch (callback_name) {
+  switch (callback_name) {
     case spaf_callback_names.track_visit:
       await trackVisitMiddleware(pixel_id, data);
       return 0;
@@ -256,7 +256,7 @@ async function spaf(pixel_id, callback_name, data) {
       return 0;
     default:
       break;
-  } */
+  }
 }
 
 //#region
