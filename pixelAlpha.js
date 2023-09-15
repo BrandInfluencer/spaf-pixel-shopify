@@ -49,7 +49,7 @@ const productViewedMiddleware = async (pixel_id, event) => {
     sendVisitCallback(pixel_id, payload).then(() => {
       if (!spaf) {
         initSpaf(pixel_id, link).then(async () => {
-          await addProductToSpaf(link, product);
+          await addProductToSpaf(pixel_id, link, product);
         });
       }
     });
@@ -61,7 +61,7 @@ const productViewedMiddleware = async (pixel_id, event) => {
     };
     sendTrackProductViewCallback(pixel_id, native_product).then(
       async (response) => {
-        await addProductToSpaf(spaf.origin_link, {
+        await addProductToSpaf(pixel_id, spaf.origin_link, {
           ...product,
           spaf_id: response.product,
         });
@@ -97,7 +97,7 @@ const trackVisitMiddleware = async (pixel_id, event) => {
     const spaf = checkStorageForSPaf();
     await sendVisitCallback(pixel_id, { affiliate_link: link });
     if (spaf?.origin_affiliate !== getURLParmas(link).affl || !spaf)
-      await initSpaf(link);
+      await initSpaf(pixel_id, link);
   }
 };
 
@@ -157,7 +157,7 @@ const checkStorageForSPaf = () => {
   return JSON.parse(stored_spaf);
 };
 
-async function addProductToSpaf(link, product) {
+async function addProductToSpaf(pixel_id, link, product) {
   /**
    * this function is called only if spaf already exists
    * product must have id and product_link
@@ -241,7 +241,7 @@ const spaf_callback_names = {
 
 //spaf interface switch
 async function spaf(pixel_id, callback_name, data) {
-  switch (callback_name) {
+  /* switch (callback_name) {
     case spaf_callback_names.track_visit:
       await trackVisitMiddleware(pixel_id, data);
       return 0;
@@ -256,7 +256,7 @@ async function spaf(pixel_id, callback_name, data) {
       return 0;
     default:
       break;
-  }
+  } */
 }
 
 //#region
@@ -281,7 +281,7 @@ const checkoutStartedMiddleware = async (pixel_id, event) => {
     sendTrackProductViewCallback(pixel_id, native_product).then(
       async (response) => {
         if (response.product)
-          await addProductToSpaf(spaf.origin_link, {
+          await addProductToSpaf(pixel_id, spaf.origin_link, {
             ...product,
             spaf_id: response.product,
             product_link: event.context.document.referrer.split("?")[0],
