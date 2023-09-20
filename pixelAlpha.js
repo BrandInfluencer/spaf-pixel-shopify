@@ -332,7 +332,7 @@ const trackPurchaseMiddleware = async (pixel_id, event) => {
       txn_token: checkout.token,
       client_id: event.clientId,
       order: {
-        id: checkout.order.id.contains("/")
+        id: checkout.order.id.includes("/")
           ? checkout.order.id.split("/").reverse()[0]
           : checkout.order.id,
         sub_total: checkout.subtotalPrice.amount,
