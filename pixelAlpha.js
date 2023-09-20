@@ -43,7 +43,7 @@ const productViewedMiddleware = async (pixel_id, event) => {
           event.context.document.location.origin +
           event.context.document.location.pathname,
         snap: { ...event },
-        id: product.data.productVariant.product.id,
+        id: event.data.productVariant.product.id,
       },
     };
     sendVisitCallback(pixel_id, payload).then(() => {
@@ -163,14 +163,16 @@ async function addProductToSpaf(pixel_id, link, product) {
    * product must have id and product_link
    */
   const old_spaf = checkStorageForSPaf();
-  const commission_details = product.spaf_id
+  if (Object.keys(old_spaf.products).includes(product.id)) return 0;
+
+  /*   const commission_details = product.spaf_id
     ? {
         origin_link: old_spaf.origin_link,
         origin_affiliate: old_spaf.origin_affiliate,
         expiry: old_spaf.expiry,
         product: product.spaf_id,
       }
-    : await getCommissionDetails(pixel_id, link, product);
+    : await getCommissionDetails(pixel_id, link, product); */
 
   /**
    * commission_details contain the original affiliate link sent in payload
@@ -179,35 +181,38 @@ async function addProductToSpaf(pixel_id, link, product) {
    * and a sp product id associated with the store product
    */
 
-  if (commission_details.product) {
-    const spaf_product = {
-      shopify_id: product.id,
-      origin_link: commission_details.origin_link,
-      origin_affiliate: commission_details.origin_affiliate,
-      spaf_id: product.spaf_id ?? commission_details.product,
-      expiry: commission_details.expiry ?? old_spaf.expiry,
-      product_link: product.product_link,
-      timestamp: Date.now(),
-      origin_history: old_spaf.products[product.id]
-        ? old_spaf.products[product.id].origin_affiliate !==
-          commission_details.origin_affiliate
-          ? [
-              {
-                origin_affiliate:
-                  old_spaf.products[product.id].origin_affiliate,
-                origin_link: old_spaf.products[product.id].origin_link,
-                expiry: old_spaf.products[product.id].expiry,
-                timestamp: old_spaf.products[product.id].timestamp,
-              },
-              ...old_spaf.products[product.id].origin_history,
-            ]
-          : [...old_spaf.products[product.id].origin_history]
-        : [],
-    };
+  //if (commission_details.product) {
+  const spaf_product = {
+    shopify_id: product.id,
+    origin_link: old_spaf.origin_link,
+    origin_affiliate: old_spaf.origin_affiliate,
+    /* spaf_id: product.spaf_id ?? commission_details.product, */
+    expiry: /* commission_details.expiry ??  */ old_spaf.expiry,
+    product_link: product.product_link,
+    timestamp: Date.now(),
+    origin_history: old_spaf.products[product.id]
+      ? old_spaf.products[product.id].origin_affiliate !==
+        old_spaf.origin_affiliate
+        ? [
+            {
+              origin_affiliate: old_spaf.products[product.id].origin_affiliate,
+              origin_link: old_spaf.products[product.id].origin_link,
+              expiry: old_spaf.products[product.id].expiry,
+              timestamp: old_spaf.products[product.id].timestamp,
+            },
+            ...old_spaf.products[product.id].origin_history,
+          ]
+        : [...old_spaf.products[product.id].origin_history]
+      : [],
+  };
 
-    const new_spaf = { ...old_spaf, [`products.${product.id}`]: spaf_product };
-    saveSpafToStorage(new_spaf);
-  }
+  const new_spaf = {
+    ...old_spaf,
+    products: { ...old_spaf.products, [product.id]: spaf_product },
+  };
+  //const new_spaf = { ...old_spaf, [`products.${product.id}`]: spaf_product };
+  saveSpafToStorage(new_spaf);
+  // }
 }
 
 async function initSpaf(pixel_id, link) {
@@ -241,7 +246,7 @@ const spaf_callback_names = {
 
 //spaf interface switch
 async function spaf(pixel_id, callback_name, data) {
-  /* switch (callback_name) {
+  switch (callback_name) {
     case spaf_callback_names.track_visit:
       await trackVisitMiddleware(pixel_id, data);
       return 0;
@@ -256,7 +261,7 @@ async function spaf(pixel_id, callback_name, data) {
       return 0;
     default:
       break;
-  } */
+  }
 }
 
 //#region
@@ -312,6 +317,7 @@ const trackPurchaseMiddleware = async (pixel_id, event) => {
         line_item.spaf_id = spaf_products[product.id].spaf_id;
         line_item.product_link = spaf_products[product.id].product_link;
       }
+      line_item.id = lineItem.id;
       line_item.product_id = product.id;
       line_item.sub_total = lineItem.variant.price.amount * lineItem.quantity;
       line_item.variant_id = lineItem.variant.id;
@@ -322,11 +328,11 @@ const trackPurchaseMiddleware = async (pixel_id, event) => {
     });
 
     const payload = {
-      affiliate_link: spaf.origin_affiliate,
+      affiliate_link: spaf.origin_link,
       txn_token: checkout.token,
       client_id: event.clientId,
       order: {
-        id: checkout.order.id.split("OrderIdentity/")[1],
+        id: checkout.order.id,
         sub_total: checkout.subtotalPrice.amount,
         currency: checkout.subtotalPrice.currencyCode,
         total_items: lineItems.length,
@@ -334,6 +340,7 @@ const trackPurchaseMiddleware = async (pixel_id, event) => {
         snap: { ...event },
       },
       line_items: line_items,
+      timestamp: new Date(Date.now()),
     };
     await sendPurchaseCallback(pixel_id, payload);
   }
