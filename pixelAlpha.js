@@ -19,7 +19,7 @@ async function getCommissionDetails(pixel_id, link, product = null) {
       headers: makePostHeader(pixel_id),
       body: JSON.stringify(payload),
     }).then((response) => {
-      console.log("Response from API function getCommissionDetails");
+      //console.log("Response from API function getCommissionDetails");
       return resolve(response.json());
     });
   });
@@ -80,7 +80,7 @@ async function sendTrackProductViewCallback(pixel_id, native_product) {
       headers: makePostHeader(pixel_id),
       body: JSON.stringify(payload),
     }).then((response) => {
-      console.log("Response from API function sendTrackProductViewCallback");
+      //console.log("Response from API function sendTrackProductViewCallback");
       return resolve(response.json());
     });
   });
@@ -102,22 +102,12 @@ const trackVisitMiddleware = async (pixel_id, event) => {
 };
 
 async function sendVisitCallback(pixel_id, payload) {
-  console.log("Sending visit callback");
-  /*  const shopify_product = product
-    ? {
-        link:
-          product.context.document.location.origin +
-          product.context.document.location.pathname,
-        snap: { ...product.data },
-        id: product.data.productVariant.product.id,
-      }
-    : null; */
   fetch(`${api_link}/track_visit`, {
     method: "POST",
     headers: makePostHeader(pixel_id),
     body: JSON.stringify(payload),
   }).then((response) => {
-    console.log("Response from API function sendVisitCallback");
+    // console.log("Response from API function sendVisitCallback");
     return response.json();
   });
 }
@@ -128,7 +118,8 @@ async function sendPurchaseCallback(pixel_id, payload) {
     headers: makePostHeader(pixel_id),
     body: JSON.stringify(payload),
   }).then((response) => {
-    console.log("Response from AP function sendPurchaseCallback");
+    clearSpafFromStorage();
+    //console.log("Response from AP function sendPurchaseCallback");
     return response.json();
   });
 }
@@ -145,6 +136,10 @@ const getURLParmas = (link = null) => {
     return 0;
   });
   return params;
+};
+
+const clearSpafFromStorage = () => {
+  localStorage.removeItem("spaf");
 };
 
 const saveSpafToStorage = (spaf) => {
@@ -164,15 +159,6 @@ async function addProductToSpaf(pixel_id, link, product) {
    */
   const old_spaf = checkStorageForSPaf();
   if (Object.keys(old_spaf.products).includes(product.id)) return 0;
-
-  /*   const commission_details = product.spaf_id
-    ? {
-        origin_link: old_spaf.origin_link,
-        origin_affiliate: old_spaf.origin_affiliate,
-        expiry: old_spaf.expiry,
-        product: product.spaf_id,
-      }
-    : await getCommissionDetails(pixel_id, link, product); */
 
   /**
    * commission_details contain the original affiliate link sent in payload
@@ -256,9 +242,9 @@ async function spaf(pixel_id, callback_name, data) {
     case spaf_callback_names.product_viewed:
       await productViewedMiddleware(pixel_id, data);
       return 0;
-    case spaf_callback_names.start_checkout:
+    /*   case spaf_callback_names.start_checkout:
       await checkoutStartedMiddleware(pixel_id, data);
-      return 0;
+      return 0; */
     default:
       break;
   }
@@ -314,8 +300,8 @@ const trackPurchaseMiddleware = async (pixel_id, event) => {
       let line_item = { snap: { ...lineItem } };
       const product = lineItem.variant.product;
       if (spaf_product_ids.includes(product.id)) {
-        line_item.spaf_id = spaf_products[product.id].spaf_id;
-        line_item.product_link = spaf_products[product.id].product_link;
+        line_item.spaf_id = spaf_products[product.id].spaf_id ?? null;
+        line_item.product_link = spaf_products[product.id].product_link ?? null;
       }
       line_item.id = lineItem.id;
       line_item.product_id = product.id;
@@ -342,9 +328,21 @@ const trackPurchaseMiddleware = async (pixel_id, event) => {
         snap: { ...event },
       },
       line_items: line_items,
-      timestamp: new Date(Date.now()),
+      timestamp: makeFullDayObject(),
     };
     await sendPurchaseCallback(pixel_id, payload);
   }
   //console.log(event);
 };
+
+function makeFullDayObject(t) {
+  const today = t ?? new Date();
+  const now = Date.parse(today);
+  const date = today.getDate();
+  const day = today.getDay() + 1;
+  const month = today.getMonth() + 1;
+  const year = today.getFullYear();
+  const full = date + "/" + (month + 1) + "/" + year;
+
+  return { date, day, month, year, full, now };
+}
